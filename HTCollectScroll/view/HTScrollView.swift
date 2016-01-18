@@ -20,6 +20,9 @@ class HTScrollView:UIView,UICollectionViewDelegate,UICollectionViewDataSource{
     let ItemIdentifier = "ItemIdentifier"
     var imageArray:[String]?
     var timer:NSTimer?
+    var pageControl:UIPageControl?
+    var collectLayout:UICollectionViewFlowLayout?
+   
     
     var dataArray:[String]{
         get{
@@ -37,6 +40,7 @@ class HTScrollView:UIView,UICollectionViewDelegate,UICollectionViewDataSource{
             // 先reloadData然后再 UICollectionView scrollToItemAtIndexPath
             self.collectionView?.reloadData()
             self.restScrollItem2Zero()
+            self.setupPageControl(datas)
         }
     }
     
@@ -56,48 +60,18 @@ class HTScrollView:UIView,UICollectionViewDelegate,UICollectionViewDataSource{
     private func setupData(){
         self.imageArray = ["da1.jpg","da2.jpg","da3.jpg","da4.jpg","da5.jpg"]
     }
-    func setupTimer(){
-        if self.timer == nil{
-            self.timer = NSTimer.scheduledTimerWithTimeInterval(scrollInterval, target: self, selector: Selector("startupScrollView"), userInfo: nil, repeats: true)
-        }
-    }
-    
-   //timer selector scroll imageView in UICollectionView reset section to middle
-    func startupScrollView(){
-        print("startupscrollView.....")
-        let midIndexPath = self.scrollCollectionView2Mid()
-        let imgCount = self.imageArray?.count
-        let itemIndex = (midIndexPath.item + 1) % imgCount!
-        var  section = midIndexPath.section
-        
-        if itemIndex == 0{
-            section = midIndexPath.section + 1
-        }
-        let scrollIndex = NSIndexPath.init(forItem: itemIndex, inSection: section)
-        self.collectionView?.scrollToItemAtIndexPath(scrollIndex, atScrollPosition:
-            UICollectionViewScrollPosition.Left, animated: true)
-    }
-    
-    private func scrollCollectionView2Mid()-> NSIndexPath{
-        // scroll CollectionView to mid position
-        let currentIndexPath = self.collectionView?.indexPathsForVisibleItems().first
-        let midIndexPath = NSIndexPath.init(forItem: (currentIndexPath?.item)!, inSection: numberOfCollectionSections/2)
-        
-        self.collectionView?.scrollToItemAtIndexPath(midIndexPath, atScrollPosition: UICollectionViewScrollPosition.Left, animated: false)
-        return midIndexPath
-    }
     
     
     private func setupUI(){
         //setup collecitonViewLayout
-        let collectLayout = UICollectionViewFlowLayout.init()
-        collectLayout.scrollDirection = .Horizontal
-//        collectLayout.sectionInset = UIEdgeInsetsMake(50, 10, 50, 15);
-        collectLayout.minimumLineSpacing = 0
-        collectLayout.itemSize = CGSizeMake(screenSize.width, self.frame.height)
+        self.collectLayout = UICollectionViewFlowLayout.init()
+        self.collectLayout!.scrollDirection = .Horizontal
+        //        collectLayout.sectionInset = UIEdgeInsetsMake(50, 10, 50, 15);
+        self.collectLayout!.minimumLineSpacing = 0
+        self.collectLayout!.itemSize = CGSizeMake(screenSize.width, self.frame.height)
         
-       // setup collectionView 
-        self.collectionView = UICollectionView.init(frame: self.bounds,collectionViewLayout:collectLayout)
+        // setup collectionView
+        self.collectionView = UICollectionView.init(frame: self.bounds,collectionViewLayout:self.collectLayout!)
         self.collectionView?.dataSource = self
         self.collectionView?.delegate = self
         self.collectionView?.pagingEnabled = true
@@ -110,7 +84,42 @@ class HTScrollView:UIView,UICollectionViewDelegate,UICollectionViewDataSource{
         
         //将indexPath.item == 0
         self.restScrollItem2Zero()
+        // setup UIPageControl
+        let pageControlHeight = self.frame.height * 0.2
+        let pageControlWidth = self.frame.width
+        let y = self.frame.height - pageControlHeight
+        let pageFrame = CGRectMake(0, y, pageControlWidth, pageControlHeight)
+        self.pageControl = UIPageControl.init(frame: pageFrame)
+        self.addSubview(self.pageControl!)
+        
     }
+    
+    
+    func setupTimer(){
+        if self.timer == nil{
+            self.timer = NSTimer.scheduledTimerWithTimeInterval(scrollInterval, target: self, selector: Selector("startupScrollView"), userInfo: nil, repeats: true)
+        }
+    }
+    
+   //timer selector scroll imageView in UICollectionView reset section to middle
+    func startupScrollView(){
+//        print("startupscrollView.....")
+        let midIndexPath = self.scrollCollectionView2Mid()
+        let imgCount = self.imageArray?.count
+        let itemIndex = (midIndexPath.item + 1) % imgCount!
+        var  section = midIndexPath.section
+        
+        if itemIndex == 0{
+            section = midIndexPath.section + 1
+        }
+        let scrollIndex = NSIndexPath.init(forItem: itemIndex, inSection: section)
+        self.collectionView?.scrollToItemAtIndexPath(scrollIndex, atScrollPosition:
+            UICollectionViewScrollPosition.Left, animated: true)
+        // set UIPageControl current page number 
+//        self.pageControl?.currentPage = itemIndex
+        
+    }
+    
     
     private func restScrollItem2Zero(){
         // 第一次将section设为中间位置
@@ -119,21 +128,49 @@ class HTScrollView:UIView,UICollectionViewDelegate,UICollectionViewDataSource{
         self.collectionView?.scrollToItemAtIndexPath(midSectionIndexPath, atScrollPosition: UICollectionViewScrollPosition.Left, animated: false)
     }
     
+    private func scrollCollectionView2Mid()-> NSIndexPath{
+        // scroll CollectionView to mid position
+        let currentIndexPath = self.collectionView?.indexPathsForVisibleItems().first
+        let midIndexPath = NSIndexPath.init(forItem: (currentIndexPath?.item)!, inSection: numberOfCollectionSections/2)
+        
+        self.collectionView?.scrollToItemAtIndexPath(midIndexPath, atScrollPosition: UICollectionViewScrollPosition.Left, animated: false)
+        return midIndexPath
+    }
+    
+    
+   
+    
+    
+    private func setupPageControl(imgsArray:[String]){
+        self.pageControl?.numberOfPages = imgsArray.count
+        self.pageControl?.currentPageIndicatorTintColor = UIColor.whiteColor()
+        self.pageControl?.pageIndicatorTintColor = UIColor.orangeColor()
+        self.pageControl?.currentPage = 0
+    }
+    
+    
+    
+   
+    
     //MARK:- UIScrollViewDelegate  Methods 
-//    func scrollViewDidEndDecelerating(scrollView: UIScrollView) {
-//        print("scrollViewDidEndDecelerating .....")
-//         self.setupTimer()
-//    }
+    func scrollViewDidScroll(scrollView: UIScrollView) {
+        //set up uipageControl current page number
+        let pageControlIndex = Int((self.collectionView?.contentOffset.x)! / (self.collectLayout?.itemSize.width)!)
+        self.pageControl?.currentPage = pageControlIndex % self.dataArray.count
+    }
+    
+    func scrollViewDidEndDecelerating(scrollView: UIScrollView) {
+    }
+    
     func scrollViewWillBeginDragging(scrollView: UIScrollView) {
-        print("scrollViewWillBeginDragging .....")
         if let timer = self.timer{
             timer.invalidate()
             self.timer = nil
         }
     }
     func scrollViewDidEndDragging(scrollView: UIScrollView, willDecelerate decelerate: Bool) {
+        
         self.setupTimer()
-        print("scrollViewDidEndDragging.....")
     }
     
     //MARK:- UICollectionViewDataSource Methods 
