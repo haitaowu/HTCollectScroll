@@ -15,6 +15,8 @@ class ViewController: UIViewController {
         super.viewDidLoad()
         let frame = CGRectMake(0, 20, screenSize.width, 200)
         let infinitScroll = HTScrollView.init(frame: frame)
+        let datas = ["da1.jpg","da2.jpg","da3.jpg","da4.jpg"]
+        infinitScroll.dataArray = datas
         self.view.addSubview(infinitScroll)
         
     }

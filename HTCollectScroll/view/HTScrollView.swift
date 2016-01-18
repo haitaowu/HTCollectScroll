@@ -28,6 +28,15 @@ class HTScrollView:UIView,UICollectionViewDelegate,UICollectionViewDataSource{
         
         set(datas){
             self.imageArray = datas
+            if let timer = self.timer{
+                timer.invalidate()
+                self.timer = nil
+            }
+            //将indexPath.item == 0
+            self.setupTimer()
+            // 先reloadData然后再 UICollectionView scrollToItemAtIndexPath
+            self.collectionView?.reloadData()
+            self.restScrollItem2Zero()
         }
     }
     
@@ -36,6 +45,7 @@ class HTScrollView:UIView,UICollectionViewDelegate,UICollectionViewDataSource{
         super.init(frame: frame)
         self.setupData()
         self.setupUI()
+        self.setupTimer()
     }
     
     required init?(coder aDecoder: NSCoder) {
@@ -45,7 +55,6 @@ class HTScrollView:UIView,UICollectionViewDelegate,UICollectionViewDataSource{
     //MARK:- private methods
     private func setupData(){
         self.imageArray = ["da1.jpg","da2.jpg","da3.jpg","da4.jpg","da5.jpg"]
-        self.setupTimer()
     }
     func setupTimer(){
         if self.timer == nil{
@@ -53,7 +62,8 @@ class HTScrollView:UIView,UICollectionViewDelegate,UICollectionViewDataSource{
         }
     }
     
-     func startupScrollView(){
+   //timer selector scroll imageView in UICollectionView reset section to middle
+    func startupScrollView(){
         print("startupscrollView.....")
         let midIndexPath = self.scrollCollectionView2Mid()
         let imgCount = self.imageArray?.count
@@ -63,24 +73,21 @@ class HTScrollView:UIView,UICollectionViewDelegate,UICollectionViewDataSource{
         if itemIndex == 0{
             section = midIndexPath.section + 1
         }
-        
         let scrollIndex = NSIndexPath.init(forItem: itemIndex, inSection: section)
-        
         self.collectionView?.scrollToItemAtIndexPath(scrollIndex, atScrollPosition:
             UICollectionViewScrollPosition.Left, animated: true)
-        
-        
     }
     
     private func scrollCollectionView2Mid()-> NSIndexPath{
         // scroll CollectionView to mid position
         let currentIndexPath = self.collectionView?.indexPathsForVisibleItems().first
-        print("visible item is \(currentIndexPath!.item)")
         let midIndexPath = NSIndexPath.init(forItem: (currentIndexPath?.item)!, inSection: numberOfCollectionSections/2)
         
         self.collectionView?.scrollToItemAtIndexPath(midIndexPath, atScrollPosition: UICollectionViewScrollPosition.Left, animated: false)
         return midIndexPath
     }
+    
+    
     private func setupUI(){
         //setup collecitonViewLayout
         let collectLayout = UICollectionViewFlowLayout.init()
@@ -101,20 +108,22 @@ class HTScrollView:UIView,UICollectionViewDelegate,UICollectionViewDataSource{
         let imageCount = self.imageArray?.count
         self.collectionView?.contentSize = CGSizeMake(self.frame.width * CGFloat(imageCount!) , self.frame.height)
         
+        //将indexPath.item == 0
+        self.restScrollItem2Zero()
+    }
+    
+    private func restScrollItem2Zero(){
         // 第一次将section设为中间位置
         let midSectionIndexPath = NSIndexPath.init(forItem:0, inSection: numberOfCollectionSections/2)
         
         self.collectionView?.scrollToItemAtIndexPath(midSectionIndexPath, atScrollPosition: UICollectionViewScrollPosition.Left, animated: false)
-        
     }
     
     //MARK:- UIScrollViewDelegate  Methods 
-    func scrollViewDidScroll(scrollView: UIScrollView) {
-    }
-    func scrollViewDidEndDecelerating(scrollView: UIScrollView) {
-        print("scrollViewDidEndDecelerating .....")
-         self.setupTimer()
-    }
+//    func scrollViewDidEndDecelerating(scrollView: UIScrollView) {
+//        print("scrollViewDidEndDecelerating .....")
+//         self.setupTimer()
+//    }
     func scrollViewWillBeginDragging(scrollView: UIScrollView) {
         print("scrollViewWillBeginDragging .....")
         if let timer = self.timer{
